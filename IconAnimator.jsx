@@ -1,24 +1,40 @@
 /*
     Icon Animator für After Effects
     --------------------------------
+    - Logo-Header (Bild) und dunkles UI-Theme
     - Regler für die Skalierung des Icons
-    - "Generate" erzeugt eine zufällige, kurvige Stotter-Animation:
+    - Regler für die Geschwindigkeit (Tempo-Faktor, 1x = 1/3 Sekunde)
+    - "GENERATE" erzeugt eine zufällige, kurvige Stotter-Animation:
       Das Icon springt in 3 Schritten (Hold-Keyframes) entlang einer
-      zufälligen Bezier-Kurve durch die Komposition, Dauer: 1/3 Sekunde.
-    - Jeder Klick auf "Generate" würfelt einen neuen Pfad.
+      zufälligen Bezier-Kurve durch die Komposition.
+    - Jeder Klick auf "GENERATE" würfelt einen neuen Pfad.
 
     Installation:
-    Datei nach "Scripts/ScriptUI Panels" im After-Effects-Ordner kopieren,
+    Den kompletten Ordner (IconAnimator.jsx + assets/) nach
+    "Scripts/ScriptUI Panels" im After-Effects-Ordner kopieren,
     AE neu starten, dann unter "Fenster > IconAnimator.jsx" öffnen.
+
+    Eigenes Logo:
+    Einfach assets/logo.png durch dein eigenes Titel-Logo ersetzen
+    (PNG, empfohlen ca. 340 x 72 px, transparenter Hintergrund geht).
 
     Benutzung:
     Komposition öffnen, Icon-Ebene auswählen (sonst wird die oberste
-    Ebene genommen), Skalierung einstellen, "Generate" klicken.
+    Ebene genommen), Skalierung einstellen, "GENERATE" klicken.
 */
 
 (function iconAnimator(thisObj) {
 
     var SCRIPT_NAME = "Icon Animator";
+    var BASE_DURATION = 1 / 3; // Sekunden bei Geschwindigkeit 1x
+
+    // Farbschema (dunkles Theme)
+    var COLOR_BG      = [0.118, 0.125, 0.149]; // Panel-Hintergrund
+    var COLOR_CARD    = [0.157, 0.165, 0.196]; // Gruppen-Hintergrund
+    var COLOR_TEXT    = [0.92, 0.93, 0.95];
+    var COLOR_MUTED   = [0.58, 0.60, 0.66];
+    var COLOR_ACCENT  = [1.0, 0.48, 0.35];     // Orange (Generate-Button)
+    var COLOR_ACCENT2 = [1.0, 0.60, 0.40];     // Orange hell (Hover)
 
     // ---------------------------------------------------------------
     // Hilfsfunktionen
@@ -54,6 +70,23 @@
             return null;
         }
         return { comp: comp, layer: layer };
+    }
+
+    // Sucht das Titel-Logo neben der Skriptdatei
+    function findLogoFile() {
+        try {
+            var scriptFile = new File($.fileName);
+            var folder = scriptFile.parent;
+            var candidates = [
+                new File(folder.fsName + "/assets/logo.png"),
+                new File(folder.fsName + "/logo.png"),
+                new File(folder.fsName + "/IconAnimator_logo.png")
+            ];
+            for (var i = 0; i < candidates.length; i++) {
+                if (candidates[i].exists) return candidates[i];
+            }
+        } catch (e) {}
+        return null;
     }
 
     // ---------------------------------------------------------------
@@ -166,6 +199,80 @@
     }
 
     // ---------------------------------------------------------------
+    // GUI-Bausteine
+    // ---------------------------------------------------------------
+
+    function setBg(ctrl, color) {
+        try {
+            ctrl.graphics.backgroundColor = ctrl.graphics.newBrush(
+                ctrl.graphics.BrushType.SOLID_COLOR, color);
+        } catch (e) {}
+    }
+
+    function setFg(ctrl, color) {
+        try {
+            ctrl.graphics.foregroundColor = ctrl.graphics.newPen(
+                ctrl.graphics.PenType.SOLID_COLOR, color, 1);
+        } catch (e) {}
+    }
+
+    // Abschnitts-Karte mit kleiner Überschrift
+    function addCard(parent, title) {
+        var card = parent.add("group");
+        card.orientation = "column";
+        card.alignChildren = ["fill", "top"];
+        card.margins = [12, 10, 12, 12];
+        card.spacing = 6;
+        setBg(card, COLOR_CARD);
+
+        var label = card.add("statictext", undefined, title.toUpperCase());
+        setFg(label, COLOR_MUTED);
+        return card;
+    }
+
+    // Custom gezeichneter, farbiger Button
+    function addFancyButton(parent, text) {
+        var btn = parent.add("button", undefined, text);
+        btn.preferredSize.height = 42;
+        btn.fillColor = COLOR_ACCENT;
+
+        btn.onDraw = function () {
+            var g = this.graphics;
+            var w = this.size.width;
+            var h = this.size.height;
+            var color = this.fillColor;
+
+            var brush = g.newBrush(g.BrushType.SOLID_COLOR, color);
+            g.newPath();
+            g.rectPath(0, 0, w, h);
+            g.fillPath(brush);
+
+            var textPen = g.newPen(g.PenType.SOLID_COLOR, [0.10, 0.06, 0.04], 1);
+            var font = ScriptUI.newFont(g.font.name, ScriptUI.FontStyle.BOLD, 15);
+            var size = g.measureString(this.text, font);
+            g.drawString(
+                this.text,
+                textPen,
+                (w - size.width) / 2,
+                (h - size.height) / 2,
+                font
+            );
+        };
+
+        // Hover-Effekt
+        btn.addEventListener("mouseover", function () {
+            btn.fillColor = COLOR_ACCENT2;
+            btn.notify("onDraw");
+        });
+        btn.addEventListener("mouseout", function () {
+            btn.fillColor = COLOR_ACCENT;
+            btn.notify("onDraw");
+        });
+
+        return btn;
+    }
+
+    // ---------------------------------------------------------------
     // GUI
     // ---------------------------------------------------------------
 
@@ -176,20 +283,38 @@
 
         pal.orientation = "column";
         pal.alignChildren = ["fill", "top"];
-        pal.spacing = 8;
-        pal.margins = 12;
+        pal.spacing = 10;
+        pal.margins = 14;
+        setBg(pal, COLOR_BG);
+
+        // --- Logo-Header ---
+        var logoFile = findLogoFile();
+        if (logoFile) {
+            var logo = pal.add("image", undefined, logoFile);
+            logo.alignment = ["center", "top"];
+        } else {
+            var titleGrp = pal.add("group");
+            titleGrp.orientation = "column";
+            titleGrp.alignChildren = ["center", "top"];
+            titleGrp.spacing = 2;
+            var title = titleGrp.add("statictext", undefined, SCRIPT_NAME);
+            setFg(title, COLOR_TEXT);
+            var sub = titleGrp.add("statictext", undefined, "random stutter paths");
+            setFg(sub, COLOR_MUTED);
+        }
 
         // --- Skalierung ---
-        var scaleGroup = pal.add("panel", undefined, "Skalierung");
-        scaleGroup.orientation = "row";
-        scaleGroup.alignChildren = ["fill", "center"];
-        scaleGroup.margins = 12;
+        var scaleCard = addCard(pal, "Skalierung");
+        var scaleRow = scaleCard.add("group");
+        scaleRow.orientation = "row";
+        scaleRow.alignChildren = ["fill", "center"];
 
-        var scaleSlider = scaleGroup.add("slider", undefined, 100, 1, 400);
+        var scaleSlider = scaleRow.add("slider", undefined, 100, 1, 400);
         scaleSlider.preferredSize.width = 180;
-        var scaleText = scaleGroup.add("edittext", undefined, "100");
+        var scaleText = scaleRow.add("edittext", undefined, "100");
         scaleText.characters = 5;
-        scaleGroup.add("statictext", undefined, "%");
+        var scalePct = scaleRow.add("statictext", undefined, "%");
+        setFg(scalePct, COLOR_TEXT);
 
         scaleSlider.onChanging = function () {
             scaleText.text = String(Math.round(scaleSlider.value));
@@ -209,17 +334,8 @@
         };
 
         // --- Geschwindigkeit ---
-        // Tempo-Faktor: 1x = 1/3 Sekunde Gesamtdauer.
-        // Höherer Wert = schnellere Animation (kürzere Dauer).
-        var BASE_DURATION = 1 / 3;
-
-        var speedGroup = pal.add("panel", undefined, "Geschwindigkeit");
-        speedGroup.orientation = "column";
-        speedGroup.alignChildren = ["fill", "center"];
-        speedGroup.margins = 12;
-        speedGroup.spacing = 4;
-
-        var speedRow = speedGroup.add("group");
+        var speedCard = addCard(pal, "Geschwindigkeit");
+        var speedRow = speedCard.add("group");
         speedRow.orientation = "row";
         speedRow.alignChildren = ["fill", "center"];
 
@@ -227,9 +343,11 @@
         speedSlider.preferredSize.width = 180;
         var speedText = speedRow.add("edittext", undefined, "1.0");
         speedText.characters = 5;
-        speedRow.add("statictext", undefined, "x");
+        var speedX = speedRow.add("statictext", undefined, "x");
+        setFg(speedX, COLOR_TEXT);
 
-        var durLabel = speedGroup.add("statictext", undefined, "");
+        var durLabel = speedCard.add("statictext", undefined, "");
+        setFg(durLabel, COLOR_MUTED);
 
         function currentDuration() {
             var speed = parseFloat(speedText.text);
@@ -260,37 +378,34 @@
             updateDurLabel();
         };
 
-        // --- Optionen ---
-        var optGroup = pal.add("panel", undefined, "Animation");
-        optGroup.orientation = "row";
-        optGroup.alignChildren = ["left", "center"];
-        optGroup.margins = 12;
-        optGroup.spacing = 6;
+        // --- Sprünge ---
+        var animCard = addCard(pal, "Animation");
+        var stepsRow = animCard.add("group");
+        stepsRow.orientation = "row";
+        stepsRow.alignChildren = ["left", "center"];
+        stepsRow.spacing = 6;
 
-        optGroup.add("statictext", undefined, "Sprünge:");
-        var stepsText = optGroup.add("edittext", undefined, "3");
+        var stepsLabel = stepsRow.add("statictext", undefined, "Sprünge:");
+        setFg(stepsLabel, COLOR_TEXT);
+        var stepsText = stepsRow.add("edittext", undefined, "3");
         stepsText.characters = 3;
 
         // --- Generate ---
-        var genBtn = pal.add("button", undefined, "Generate");
-        genBtn.preferredSize.height = 36;
+        var genBtn = addFancyButton(pal, "GENERATE");
 
         genBtn.onClick = function () {
             var scaleVal = parseFloat(scaleText.text);
             if (isNaN(scaleVal) || scaleVal <= 0) scaleVal = 100;
 
-            var dur = currentDuration();
-
             var steps = parseInt(stepsText.text, 10);
             if (isNaN(steps) || steps < 1) steps = 3;
 
-            generateAnimation(scaleVal, dur, steps);
+            generateAnimation(scaleVal, currentDuration(), steps);
         };
 
         var hint = pal.add("statictext", undefined,
-            "Icon-Ebene auswählen, dann Generate klicken.", { multiline: true });
-        hint.graphics.foregroundColor =
-            hint.graphics.newPen(hint.graphics.PenType.SOLID_COLOR, [0.6, 0.6, 0.6], 1);
+            "Icon-Ebene auswählen, dann GENERATE klicken.", { multiline: true });
+        setFg(hint, COLOR_MUTED);
 
         pal.layout.layout(true);
         pal.onResizing = pal.onResize = function () {

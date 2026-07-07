@@ -21,9 +21,17 @@ Komposition springen lässt.
     (Richtung, Krümmung und Positionen sind zufällig).
 - Anzahl der Sprünge ist im Panel einstellbar.
 
+## Eigenes Titel-Logo
+
+Das Panel zeigt oben ein Logo an. Ersetze einfach `assets/logo.png` durch
+dein eigenes Bild (PNG, empfohlen ca. **340 × 72 px**, transparenter
+Hintergrund funktioniert). Alternativ kann das Logo auch als `logo.png`
+oder `IconAnimator_logo.png` direkt neben der `.jsx`-Datei liegen.
+Ohne Logo-Datei wird ein Text-Titel angezeigt.
+
 ## Installation
 
-1. `IconAnimator.jsx` kopieren nach:
+1. `IconAnimator.jsx` **zusammen mit dem `assets/`-Ordner** kopieren nach:
    - **Windows:** `C:\Program Files\Adobe\Adobe After Effects <Version>\Support Files\Scripts\ScriptUI Panels\`
    - **macOS:** `/Applications/Adobe After Effects <Version>/Scripts/ScriptUI Panels/`
 2. After Effects neu starten.
