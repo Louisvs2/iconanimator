@@ -20,6 +20,10 @@ Komposition springen lässt.
   - Jeder Klick auf **Generate** würfelt einen komplett neuen Pfad
     (Richtung, Krümmung und Positionen sind zufällig).
 - Anzahl der Sprünge ist im Panel einstellbar.
+- Die **Icon-Ebene wird automatisch getrimmt**: Sie beginnt beim Start der
+  Animation und endet genau mit ihr (In-/Out-Point = Animationsdauer).
+- Das **Panel-Fenster ist frei skalierbar** — Regler, Button und das
+  Titel-Logo wachsen bzw. schrumpfen mit der Fensterbreite.
 
 ## Eigenes Titel-Logo
 

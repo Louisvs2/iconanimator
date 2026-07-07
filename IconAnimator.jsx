@@ -191,6 +191,21 @@
                     KeyframeInterpolationType.HOLD
                 );
             }
+
+            // Ebene auf die Animationsdauer trimmen:
+            // sie beginnt beim Start der Animation und endet mit ihr.
+            var endTime = startTime + durationSec;
+            try {
+                if (startTime >= layer.outPoint) {
+                    layer.outPoint = endTime;
+                    layer.inPoint = startTime;
+                } else {
+                    layer.inPoint = startTime;
+                    layer.outPoint = endTime;
+                }
+            } catch (trimErr) {
+                // z.B. Footage kuerzer als Animationsdauer - dann unveraendert lassen
+            }
         } catch (err) {
             alert("Fehler beim Generieren: " + err.toString());
         } finally {
@@ -287,11 +302,28 @@
         pal.margins = 14;
         setBg(pal, COLOR_BG);
 
-        // --- Logo-Header ---
+        // --- Logo-Header (skaliert mit der Fensterbreite) ---
+        var logo = null;
         var logoFile = findLogoFile();
         if (logoFile) {
-            var logo = pal.add("image", undefined, logoFile);
-            logo.alignment = ["center", "top"];
+            logo = pal.add("image", undefined, logoFile);
+            logo.alignment = ["fill", "top"];
+            logo.maximumSize = [9999, 9999];
+            // Seitenverhaeltnis merken (Hoehe / Breite)
+            logo.logoAspect = logo.image.size[1] / logo.image.size[0];
+            // Bild beim Zeichnen auf die aktuelle Controlgroesse skalieren
+            logo.onDraw = function () {
+                try {
+                    var g = this.graphics;
+                    var img = this.image;
+                    var w = this.size.width;
+                    var h = this.size.height;
+                    var s = Math.min(w / img.size[0], h / img.size[1]);
+                    var dw = img.size[0] * s;
+                    var dh = img.size[1] * s;
+                    g.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+                } catch (e) {}
+            };
         } else {
             var titleGrp = pal.add("group");
             titleGrp.orientation = "column";
@@ -311,6 +343,8 @@
 
         var scaleSlider = scaleRow.add("slider", undefined, 100, 1, 400);
         scaleSlider.preferredSize.width = 180;
+        scaleSlider.alignment = ["fill", "center"];
+        scaleSlider.maximumSize.width = 9999;
         var scaleText = scaleRow.add("edittext", undefined, "100");
         scaleText.characters = 5;
         var scalePct = scaleRow.add("statictext", undefined, "%");
@@ -341,6 +375,8 @@
 
         var speedSlider = speedRow.add("slider", undefined, 1, 0.1, 3);
         speedSlider.preferredSize.width = 180;
+        speedSlider.alignment = ["fill", "center"];
+        speedSlider.maximumSize.width = 9999;
         var speedText = speedRow.add("edittext", undefined, "1.0");
         speedText.characters = 5;
         var speedX = speedRow.add("statictext", undefined, "x");
@@ -408,7 +444,15 @@
         setFg(hint, COLOR_MUTED);
 
         pal.layout.layout(true);
+        pal.minimumSize = [260, 320];
+
+        // Beim Skalieren des Fensters: Logo-Hoehe an neue Breite anpassen,
+        // dann alle Inhalte per Layout-Manager mitziehen.
         pal.onResizing = pal.onResize = function () {
+            if (logo && logo.logoAspect) {
+                var availW = Math.max(60, this.size.width - 28);
+                logo.preferredSize = [availW, Math.round(availW * logo.logoAspect)];
+            }
             this.layout.resize();
         };
 
