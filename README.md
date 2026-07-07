@@ -8,6 +8,10 @@ Komposition springen lässt.
 
 - **Skalierungs-Regler** (1–400 %): passt die Skalierung der ausgewählten
   Icon-Ebene direkt an.
+- **Geschwindigkeits-Regler** (0,1×–3×): steuert das Tempo der Animation.
+  1× entspricht 1/3 Sekunde Gesamtdauer, höhere Werte machen die Animation
+  schneller (kürzer), niedrigere langsamer. Die resultierende Dauer wird
+  im Panel angezeigt.
 - **Generate-Button**: erzeugt eine Animation, bei der das Icon entlang einer
   zufälligen Bezier-Kurve (z. B. von links unten nach rechts oben) läuft.
   - Dauer: standardmäßig **1/3 Sekunde**
@@ -15,7 +19,7 @@ Komposition springen lässt.
     Bewegung — es springt zwischen den Positionen).
   - Jeder Klick auf **Generate** würfelt einen komplett neuen Pfad
     (Richtung, Krümmung und Positionen sind zufällig).
-- Dauer und Anzahl der Sprünge sind im Panel einstellbar.
+- Anzahl der Sprünge ist im Panel einstellbar.
 
 ## Installation
 

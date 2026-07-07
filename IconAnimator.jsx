@@ -208,16 +208,64 @@
             applyScale(Math.round(v));
         };
 
+        // --- Geschwindigkeit ---
+        // Tempo-Faktor: 1x = 1/3 Sekunde Gesamtdauer.
+        // Höherer Wert = schnellere Animation (kürzere Dauer).
+        var BASE_DURATION = 1 / 3;
+
+        var speedGroup = pal.add("panel", undefined, "Geschwindigkeit");
+        speedGroup.orientation = "column";
+        speedGroup.alignChildren = ["fill", "center"];
+        speedGroup.margins = 12;
+        speedGroup.spacing = 4;
+
+        var speedRow = speedGroup.add("group");
+        speedRow.orientation = "row";
+        speedRow.alignChildren = ["fill", "center"];
+
+        var speedSlider = speedRow.add("slider", undefined, 1, 0.1, 3);
+        speedSlider.preferredSize.width = 180;
+        var speedText = speedRow.add("edittext", undefined, "1.0");
+        speedText.characters = 5;
+        speedRow.add("statictext", undefined, "x");
+
+        var durLabel = speedGroup.add("statictext", undefined, "");
+
+        function currentDuration() {
+            var speed = parseFloat(speedText.text);
+            if (isNaN(speed) || speed <= 0) speed = 1;
+            return BASE_DURATION / speed;
+        }
+
+        function updateDurLabel() {
+            durLabel.text = "Dauer: " + currentDuration().toFixed(3) + " s";
+        }
+        updateDurLabel();
+
+        speedSlider.onChanging = function () {
+            speedText.text = speedSlider.value.toFixed(1);
+            updateDurLabel();
+        };
+        speedSlider.onChange = function () {
+            speedText.text = speedSlider.value.toFixed(1);
+            updateDurLabel();
+        };
+        speedText.onChange = function () {
+            var v = parseFloat(speedText.text);
+            if (isNaN(v)) v = 1;
+            if (v < 0.1) v = 0.1;
+            if (v > 3) v = 3;
+            speedText.text = v.toFixed(1);
+            speedSlider.value = v;
+            updateDurLabel();
+        };
+
         // --- Optionen ---
         var optGroup = pal.add("panel", undefined, "Animation");
         optGroup.orientation = "row";
         optGroup.alignChildren = ["left", "center"];
         optGroup.margins = 12;
         optGroup.spacing = 6;
-
-        optGroup.add("statictext", undefined, "Dauer (s):");
-        var durText = optGroup.add("edittext", undefined, "0.333");
-        durText.characters = 5;
 
         optGroup.add("statictext", undefined, "Sprünge:");
         var stepsText = optGroup.add("edittext", undefined, "3");
@@ -231,8 +279,7 @@
             var scaleVal = parseFloat(scaleText.text);
             if (isNaN(scaleVal) || scaleVal <= 0) scaleVal = 100;
 
-            var dur = parseFloat(durText.text);
-            if (isNaN(dur) || dur <= 0) dur = 1 / 3;
+            var dur = currentDuration();
 
             var steps = parseInt(stepsText.text, 10);
             if (isNaN(steps) || steps < 1) steps = 3;
