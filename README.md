@@ -1,61 +1,93 @@
-# Icon Animator (After Effects Script)
+# Icon Animator
 
-Ein ScriptUI-Panel für Adobe After Effects, das ein Icon (Bild-Ebene) mit einer
-zufälligen, abgehackten Stotter-Animation entlang einer Kurve durch die
-Komposition springen lässt.
+Ein ScriptUI-Panel für Adobe After Effects. Es lässt ein Icon in wenigen
+Sprüngen entlang einer zufälligen Kurve durch die Komposition stottern —
+ein Effekt, der von Hand jedes Mal ein Dutzend Keyframes kostet.
+
+Jeder Klick auf **GENERATE** würfelt einen komplett neuen Pfad.
+
+---
 
 ## Funktionen
 
-- **Skalierungs-Regler** (1–400 %): passt die Skalierung der ausgewählten
-  Icon-Ebene direkt an.
-- **Geschwindigkeits-Regler** (0,1×–3×): steuert das Tempo der Animation.
-  1× entspricht 1/3 Sekunde Gesamtdauer, höhere Werte machen die Animation
-  schneller (kürzer), niedrigere langsamer. Die resultierende Dauer wird
-  im Panel angezeigt.
-- **Generate-Button**: erzeugt eine Animation, bei der das Icon entlang einer
-  zufälligen Bezier-Kurve (z. B. von links unten nach rechts oben) läuft.
-  - Dauer: standardmäßig **1/3 Sekunde**
-  - Das Icon bewegt sich **3-mal stotternd** (Hold-Keyframes, keine flüssige
-    Bewegung — es springt zwischen den Positionen).
-  - Jeder Klick auf **Generate** würfelt einen komplett neuen Pfad
-    (Richtung, Krümmung und Positionen sind zufällig).
-- Anzahl der Sprünge ist im Panel einstellbar.
-- Die **Icon-Ebene wird automatisch getrimmt**: Sie beginnt beim Start der
-  Animation und endet genau mit ihr (In-/Out-Point = Animationsdauer).
-- Das **Panel-Fenster ist frei skalierbar** — Regler, Button und das
-  Titel-Logo wachsen bzw. schrumpfen mit der Fensterbreite.
+**Skalierung (1–400 %)** — passt die ausgewählte Ebene sofort an, nicht erst
+beim Generieren.
 
-## Eigenes Titel-Logo
+**Geschwindigkeit (0,1×–3×)** — Faktor auf die Grunddauer von 1/3 Sekunde.
+Höhere Werte machen die Animation kürzer. Die daraus errechnete Dauer steht
+unter dem Regler.
 
-Das Panel zeigt oben ein Logo an. Ersetze einfach `assets/logo.png` durch
-dein eigenes Bild (PNG, empfohlen ca. **340 × 72 px**, transparenter
-Hintergrund funktioniert). Alternativ kann das Logo auch als `logo.png`
-oder `IconAnimator_logo.png` direkt neben der `.jsx`-Datei liegen.
-Ohne Logo-Datei wird ein Text-Titel angezeigt.
+**Sprünge** — wie viele Positionen das Icon anspringt. Vorgabe ist 3.
+
+**GENERATE** — setzt die Keyframes:
+
+- Das Icon läuft entlang einer zufälligen quadratischen Bezier-Kurve.
+  Start- und Endpunkt liegen einander auf einem Streuring um die
+  Kompositionsmitte gegenüber, der Kontrollpunkt sitzt seitlich versetzt.
+- Alle Keyframes stehen auf **Hold**. Das Icon gleitet nicht, es springt.
+- Die Ebene wird auf die Animationsdauer getrimmt: In-Point beim Start,
+  Out-Point am Ende.
+- Bestehende Positions-Keyframes der Ebene werden dabei ersetzt.
+
+Alles läuft in einer Undo-Gruppe und lässt sich mit **Strg/Cmd + Z**
+zurücknehmen.
+
+---
 
 ## Installation
 
-1. `IconAnimator.jsx` **zusammen mit dem `assets/`-Ordner** kopieren nach:
-   - **Windows:** `C:\Program Files\Adobe\Adobe After Effects <Version>\Support Files\Scripts\ScriptUI Panels\`
-   - **macOS:** `/Applications/Adobe After Effects <Version>/Scripts/ScriptUI Panels/`
-2. After Effects neu starten.
-3. Panel öffnen über **Fenster → IconAnimator.jsx**.
+Kopiere `IconAnimator.jsx` nach:
 
-Alternativ ohne Installation: **Datei → Skripte → Skriptdatei ausführen…**
-und die `.jsx`-Datei auswählen.
+- **Windows** — `C:\Program Files\Adobe\Adobe After Effects <Version>\Support Files\Scripts\ScriptUI Panels\`
+- **macOS** — `/Applications/Adobe After Effects <Version>/Scripts/ScriptUI Panels/`
 
-> Hinweis: In den Voreinstellungen unter *Skripte & Expressions* sollte
-> „Skripts erlauben, Dateien zu schreiben…" aktiviert sein (für ältere
-> AE-Versionen nicht zwingend nötig, schadet aber nicht).
+Starte After Effects neu. Das Panel liegt danach unter
+**Fenster → IconAnimator.jsx** und lässt sich andocken.
+
+Ohne Installation geht es auch: **Datei → Skripte → Skriptdatei ausführen…**
+und die `.jsx` auswählen. Dann öffnet sich das Panel als eigenes Fenster.
+
+---
 
 ## Benutzung
 
-1. Komposition öffnen und das Icon (Bild) hineinlegen — z. B. mittig.
-2. Icon-Ebene auswählen (ohne Auswahl wird die oberste Ebene verwendet).
-3. Skalierung mit dem Regler einstellen.
-4. **Generate** klicken → die Stotter-Animation startet ab der aktuellen
-   Position des Zeitcursors.
-5. Nicht zufrieden mit dem Pfad? Einfach nochmal **Generate** klicken.
+1. Komposition öffnen und das Icon hineinlegen.
+2. Die Icon-Ebene auswählen. Ohne Auswahl nimmt das Skript die oberste Ebene.
+3. Skalierung und Geschwindigkeit einstellen.
+4. Den Zeitcursor dorthin setzen, wo die Animation beginnen soll.
+5. **GENERATE** klicken.
 
-Bestehende Positions-Keyframes der Ebene werden bei jedem Generate ersetzt.
-Alles ist per **Strg/Cmd+Z** rückgängig zu machen.
+Gefällt der Pfad nicht, klick einfach nochmal.
+
+---
+
+## Gestaltung
+
+Weiß, Schwarz, ein Orange (`#FF3B00`) für den Hauptbutton, Grau (`#8A8A8A`)
+für Nebentext. Eine Schrift, dünne Trennlinien statt Kästen, keine Rundungen
+und keine Icons.
+
+Das Panel ist frei skalierbar; die Mindestgröße beträgt 260 × 320 px.
+
+---
+
+## Bekannte Grenzen
+
+**3D-Ebenen** — Position und Skalierung werden mit zwei Komponenten gesetzt.
+Bei aktiviertem 3D-Schalter erwartet After Effects drei; das Skript
+funktioniert dort nicht.
+
+**Sprünge ohne Obergrenze** — sehr große Werte erzeugen entsprechend viele
+Keyframes und können After Effects blockieren.
+
+**Umlaute** — die Datei ist UTF-8 ohne BOM. Je nach After-Effects-Version
+können Umlaute in den Beschriftungen falsch dargestellt werden.
+
+**Angedocktes Panel** — der weiße Hintergrund wird über
+`graphics.backgroundColor` gesetzt. Nicht jede After-Effects-Version wendet
+das auf angedockte Panels an; dort kann der graue Programmhintergrund
+stehen bleiben. Als eigenes Fenster ist die Darstellung immer korrekt.
+
+---
+
+BY LOUIS REINECKE
