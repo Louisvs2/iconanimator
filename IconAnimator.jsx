@@ -1,7 +1,7 @@
 /*
     Icon Animator für After Effects
     --------------------------------
-    - Logo-Header (Bild) und dunkles UI-Theme
+    - Schwarz-weißes Panel mit orangefarbenem Hauptbutton
     - Regler für die Skalierung des Icons
     - Regler für die Geschwindigkeit (Tempo-Faktor, 1x = 1/3 Sekunde)
     - "GENERATE" erzeugt eine zufällige, kurvige Stotter-Animation:
@@ -10,13 +10,8 @@
     - Jeder Klick auf "GENERATE" würfelt einen neuen Pfad.
 
     Installation:
-    Den kompletten Ordner (IconAnimator.jsx + assets/) nach
-    "Scripts/ScriptUI Panels" im After-Effects-Ordner kopieren,
-    AE neu starten, dann unter "Fenster > IconAnimator.jsx" öffnen.
-
-    Eigenes Logo:
-    Einfach assets/logo.png durch dein eigenes Titel-Logo ersetzen
-    (PNG, empfohlen ca. 340 x 72 px, transparenter Hintergrund geht).
+    IconAnimator.jsx nach "Scripts/ScriptUI Panels" im After-Effects-Ordner
+    kopieren, AE neu starten, dann unter "Fenster > IconAnimator.jsx" öffnen.
 
     Benutzung:
     Komposition öffnen, Icon-Ebene auswählen (sonst wird die oberste
@@ -28,13 +23,13 @@
     var SCRIPT_NAME = "Icon Animator";
     var BASE_DURATION = 1 / 3; // Sekunden bei Geschwindigkeit 1x
 
-    // Farbschema (dunkles Theme)
-    var COLOR_BG      = [0.118, 0.125, 0.149]; // Panel-Hintergrund
-    var COLOR_CARD    = [0.157, 0.165, 0.196]; // Gruppen-Hintergrund
-    var COLOR_TEXT    = [0.92, 0.93, 0.95];
-    var COLOR_MUTED   = [0.58, 0.60, 0.66];
-    var COLOR_ACCENT  = [1.0, 0.48, 0.35];     // Orange (Generate-Button)
-    var COLOR_ACCENT2 = [1.0, 0.60, 0.40];     // Orange hell (Hover)
+    // Farbschema (weiß, schwarz, ein Akzent)
+    var COLOR_BG      = [1, 1, 1];             // Weiß  #FFFFFF
+    var COLOR_CARD    = [1, 1, 1];             // Abschnitte ohne eigene Fläche
+    var COLOR_TEXT    = [0, 0, 0];             // Schwarz  #000000
+    var COLOR_MUTED   = [0.541, 0.541, 0.541]; // Grau  #8A8A8A
+    var COLOR_ACCENT  = [1, 0.231, 0];         // Orange  #FF3B00
+    var COLOR_ACCENT2 = [0, 0, 0];             // Schwarz für den aktiven Zustand
 
     // ---------------------------------------------------------------
     // Hilfsfunktionen
@@ -217,6 +212,26 @@
     // GUI-Bausteine
     // ---------------------------------------------------------------
 
+    // Systemschrift in der gewuenschten Groesse/Staerke
+    function uiFont(style, size) {
+        try {
+            return ScriptUI.newFont("", style, size);
+        } catch (e) {
+            try {
+                return ScriptUI.newFont("dialog", style, size);
+            } catch (e2) {
+                return null;
+            }
+        }
+    }
+
+    function setFont(ctrl, style, size) {
+        try {
+            var f = uiFont(style, size);
+            if (f) ctrl.graphics.font = f;
+        } catch (e) {}
+    }
+
     function setBg(ctrl, color) {
         try {
             ctrl.graphics.backgroundColor = ctrl.graphics.newBrush(
@@ -231,21 +246,36 @@
         } catch (e) {}
     }
 
-    // Abschnitts-Karte mit kleiner Überschrift
+    // Duenne schwarze Trennlinie (1 px hoch)
+    function addRule(parent) {
+        var rule = parent.add("group");
+        rule.orientation = "row";
+        rule.margins = 0;
+        rule.spacing = 0;
+        rule.alignment = ["fill", "top"];
+        rule.preferredSize.height = 1;
+        rule.maximumSize.height = 1;
+        rule.minimumSize.height = 1;
+        setBg(rule, COLOR_TEXT);
+        return rule;
+    }
+
+    // Abschnitt mit kleiner, grauer Versalien-Überschrift (ohne Kasten)
     function addCard(parent, title) {
         var card = parent.add("group");
         card.orientation = "column";
         card.alignChildren = ["fill", "top"];
-        card.margins = [12, 10, 12, 12];
-        card.spacing = 6;
+        card.margins = 0;
+        card.spacing = 8;
         setBg(card, COLOR_CARD);
 
         var label = card.add("statictext", undefined, title.toUpperCase());
         setFg(label, COLOR_MUTED);
+        setFont(label, ScriptUI.FontStyle.REGULAR, 10);
         return card;
     }
 
-    // Custom gezeichneter, farbiger Button
+    // Flacher, rechteckiger Hauptbutton: orange Fläche, weiße Schrift
     function addFancyButton(parent, text) {
         var btn = parent.add("button", undefined, text);
         btn.preferredSize.height = 42;
@@ -262,8 +292,8 @@
             g.rectPath(0, 0, w, h);
             g.fillPath(brush);
 
-            var textPen = g.newPen(g.PenType.SOLID_COLOR, [0.10, 0.06, 0.04], 1);
-            var font = ScriptUI.newFont(g.font.name, ScriptUI.FontStyle.BOLD, 15);
+            var textPen = g.newPen(g.PenType.SOLID_COLOR, COLOR_BG, 1);
+            var font = uiFont(ScriptUI.FontStyle.BOLD, 12) || g.font;
             var size = g.measureString(this.text, font);
             g.drawString(
                 this.text,
@@ -298,42 +328,22 @@
 
         pal.orientation = "column";
         pal.alignChildren = ["fill", "top"];
-        pal.spacing = 10;
-        pal.margins = 14;
+        pal.spacing = 12;
+        pal.margins = 16;
         setBg(pal, COLOR_BG);
 
-        // --- Logo-Header (skaliert mit der Fensterbreite) ---
+        // --- Titel ---
         var logo = null;
-        var logoFile = findLogoFile();
-        if (logoFile) {
-            logo = pal.add("image", undefined, logoFile);
-            logo.alignment = ["fill", "top"];
-            logo.maximumSize = [9999, 9999];
-            // Seitenverhaeltnis merken (Hoehe / Breite)
-            logo.logoAspect = logo.image.size[1] / logo.image.size[0];
-            // Bild beim Zeichnen auf die aktuelle Controlgroesse skalieren
-            logo.onDraw = function () {
-                try {
-                    var g = this.graphics;
-                    var img = this.image;
-                    var w = this.size.width;
-                    var h = this.size.height;
-                    var s = Math.min(w / img.size[0], h / img.size[1]);
-                    var dw = img.size[0] * s;
-                    var dh = img.size[1] * s;
-                    g.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
-                } catch (e) {}
-            };
-        } else {
-            var titleGrp = pal.add("group");
-            titleGrp.orientation = "column";
-            titleGrp.alignChildren = ["center", "top"];
-            titleGrp.spacing = 2;
-            var title = titleGrp.add("statictext", undefined, SCRIPT_NAME);
-            setFg(title, COLOR_TEXT);
-            var sub = titleGrp.add("statictext", undefined, "random stutter paths");
-            setFg(sub, COLOR_MUTED);
-        }
+        var titleGrp = pal.add("group");
+        titleGrp.orientation = "column";
+        titleGrp.alignChildren = ["left", "top"];
+        titleGrp.margins = 0;
+        titleGrp.spacing = 0;
+        var title = titleGrp.add("statictext", undefined, SCRIPT_NAME.toUpperCase());
+        setFg(title, COLOR_TEXT);
+        setFont(title, ScriptUI.FontStyle.BOLD, 18);
+
+        addRule(pal);
 
         // --- Skalierung ---
         var scaleCard = addCard(pal, "Skalierung");
@@ -347,8 +357,12 @@
         scaleSlider.maximumSize.width = 9999;
         var scaleText = scaleRow.add("edittext", undefined, "100");
         scaleText.characters = 5;
+        setBg(scaleText, COLOR_BG);
+        setFg(scaleText, COLOR_TEXT);
+        setFont(scaleText, ScriptUI.FontStyle.REGULAR, 11);
         var scalePct = scaleRow.add("statictext", undefined, "%");
         setFg(scalePct, COLOR_TEXT);
+        setFont(scalePct, ScriptUI.FontStyle.REGULAR, 11);
 
         scaleSlider.onChanging = function () {
             scaleText.text = String(Math.round(scaleSlider.value));
@@ -367,6 +381,8 @@
             applyScale(Math.round(v));
         };
 
+        addRule(pal);
+
         // --- Geschwindigkeit ---
         var speedCard = addCard(pal, "Geschwindigkeit");
         var speedRow = speedCard.add("group");
@@ -379,11 +395,16 @@
         speedSlider.maximumSize.width = 9999;
         var speedText = speedRow.add("edittext", undefined, "1.0");
         speedText.characters = 5;
+        setBg(speedText, COLOR_BG);
+        setFg(speedText, COLOR_TEXT);
+        setFont(speedText, ScriptUI.FontStyle.REGULAR, 11);
         var speedX = speedRow.add("statictext", undefined, "x");
         setFg(speedX, COLOR_TEXT);
+        setFont(speedX, ScriptUI.FontStyle.REGULAR, 11);
 
         var durLabel = speedCard.add("statictext", undefined, "");
         setFg(durLabel, COLOR_MUTED);
+        setFont(durLabel, ScriptUI.FontStyle.REGULAR, 10);
 
         function currentDuration() {
             var speed = parseFloat(speedText.text);
@@ -414,17 +435,23 @@
             updateDurLabel();
         };
 
+        addRule(pal);
+
         // --- Sprünge ---
         var animCard = addCard(pal, "Animation");
         var stepsRow = animCard.add("group");
         stepsRow.orientation = "row";
         stepsRow.alignChildren = ["left", "center"];
-        stepsRow.spacing = 6;
+        stepsRow.spacing = 8;
 
-        var stepsLabel = stepsRow.add("statictext", undefined, "Sprünge:");
-        setFg(stepsLabel, COLOR_TEXT);
+        var stepsLabel = stepsRow.add("statictext", undefined, "SPRÜNGE");
+        setFg(stepsLabel, COLOR_MUTED);
+        setFont(stepsLabel, ScriptUI.FontStyle.REGULAR, 10);
         var stepsText = stepsRow.add("edittext", undefined, "3");
         stepsText.characters = 3;
+        setBg(stepsText, COLOR_BG);
+        setFg(stepsText, COLOR_TEXT);
+        setFont(stepsText, ScriptUI.FontStyle.REGULAR, 11);
 
         // --- Generate ---
         var genBtn = addFancyButton(pal, "GENERATE");
@@ -442,6 +469,20 @@
         var hint = pal.add("statictext", undefined,
             "Icon-Ebene auswählen, dann GENERATE klicken.", { multiline: true });
         setFg(hint, COLOR_MUTED);
+        setFont(hint, ScriptUI.FontStyle.REGULAR, 11);
+
+        // --- Branding ---
+        addRule(pal);
+
+        var brandRow = pal.add("group");
+        brandRow.orientation = "row";
+        brandRow.alignment = ["fill", "top"];
+        brandRow.alignChildren = ["right", "center"];
+        brandRow.margins = 0;
+        brandRow.spacing = 0;
+        var brand = brandRow.add("statictext", undefined, "BY LOUIS REINECKE");
+        setFg(brand, COLOR_MUTED);
+        setFont(brand, ScriptUI.FontStyle.REGULAR, 10);
 
         pal.layout.layout(true);
         pal.minimumSize = [260, 320];
